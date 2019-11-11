@@ -10,8 +10,8 @@
 // @compatible      vivaldi
 // @namespace       https://github.com/s-marty/SeenChute
 // @homepageURL     https://github.com/s-marty/SeenChute
-// @icon            https://raw.githubusercontent.com/s-marty/SmartChute/master/images/seenChute.png
-// @downloadURL     https://github.com/s-marty/SmartChute/raw/master/src/seenChute.user.js
+// @icon            https://raw.githubusercontent.com/s-marty/SeenChute/master/images/seenChute.png
+// @downloadURL     https://github.com/s-marty/SeenChute/raw/master/src/seenChute.user.js
 // @contributionURL https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=QHFFSLZ7ENUQN&source=url
 // @include         /^https?://www\.bitchute\.com/.*$/
 // @run-at          document-end
