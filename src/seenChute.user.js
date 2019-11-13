@@ -20,6 +20,8 @@
 // @noframes
 // ==/UserScript==
 
+/* jshint esversion: 6 */
+/* jshint multistr: true */
 
 /** **********************   Features   **********************
 *** Adds a red metered bar over your watched videos by percent.
@@ -29,6 +31,7 @@
 ***     The oldest database records will be truncated first.
 *** Bar colors may be edited as well.
 *** See "Editable options" in source code below.
+*** No extra @require files (jquery et.al.)
 
 ***  ***  Does not & will not work well with IE and IEdge  ***/
 
@@ -44,7 +47,7 @@ var bar_bottom_color = "#CC3333";  /* Edits made here will be lost during usersc
 (function() {
     "use strict";
 
-    var BC = {}
+    var BC = {};
     var d = document;
     var videoId = '';
     var unloader = null;
@@ -97,14 +100,14 @@ var bar_bottom_color = "#CC3333";  /* Edits made here will be lost during usersc
 
             if (! BC.api) {
                 BC.api = qs('video#player');
-                BC.api.addEventListener('timeupdate', function(e){ onPlayProgress(e) }, false);
+                BC.api.addEventListener('timeupdate', function(e){ onPlayProgress(e); }, false);
             }
             if (! unloader) {
-                window.addEventListener('beforeunload', function(e){ watchedlistAdd(e) }, false);
+                window.addEventListener('beforeunload', function(e){ watchedlistAdd(e); }, false);
                 unloader = true;
             }
             applySeenBars();
-            window.setTimeout(function() { showMoreListen() }, 5000);
+            window.setTimeout(function() { showMoreListen(); }, 5000);
         }
         else if (BC.profilepage || BC.hashtagpage || BC.playlistpage) {
             BC.page = 'profilepage';
@@ -137,13 +140,13 @@ var bar_bottom_color = "#CC3333";  /* Edits made here will be lost during usersc
 
             if (!listingTabs) {
                 qs("ul.nav-tabs-list li a[href='#listing-all']")
-                  .addEventListener('click', function(e){ applySeenBars() }, false);
+                  .addEventListener('click', function(e){ applySeenBars(); }, false);
                 qs("ul.nav-tabs-list li a[href='#listing-popular']")
-                  .addEventListener('click', function(e){ applySeenBars() }, false);
+                  .addEventListener('click', function(e){ applySeenBars(); }, false);
                 qs("ul.nav-tabs-list li a[href='#listing-subscribed']")
-                  .addEventListener('click', function(e){ applySeenBars() }, false);
+                  .addEventListener('click', function(e){ applySeenBars(); }, false);
                 qs("ul.nav-tabs-list li a[href='#listing-trending']")
-                  .addEventListener('click', function(e){ applySeenBars(); trendingTabs() }, false);
+                  .addEventListener('click', function(e){ applySeenBars(); trendingTabs(); }, false);
 
                 addListener(listingsAll, function(e) {
                     let newlistings = qs('#listing-all > div.row');
@@ -169,16 +172,16 @@ var bar_bottom_color = "#CC3333";  /* Edits made here will be lost during usersc
             listingsPopHeight = Math.round(listingsPopular.getBoundingClientRect().height);
             applySeenBars();
         }
-        else return
-    };
+        else return;
+    }
 
     function trendingTabs(e) {
         qs("ul.nav.nav-tabs li a[href='#trending-day']")
-          .addEventListener('click', function(e){ applySeenBars() }, false);
+          .addEventListener('click', function(e){ applySeenBars(); }, false);
         qs("ul.nav.nav-tabs li a[href='#trending-week']")
-          .addEventListener('click', function(e){ applySeenBars() }, false);
+          .addEventListener('click', function(e){ applySeenBars(); }, false);
         qs("ul.nav.nav-tabs li a[href='#trending-month']")
-          .addEventListener('click', function(e){ applySeenBars() }, false);
+          .addEventListener('click', function(e){ applySeenBars(); }, false);
     }
 
     function onPlayProgress(e) {
@@ -231,7 +234,7 @@ var bar_bottom_color = "#CC3333";  /* Edits made here will be lost during usersc
             ];
 
         selectors.some(function(item) {
-            if (qs(item) != null) {
+            if (qs(item) !== null) {
                 selector = item.split(',').join(':not([seen]), ') + ':not([seen])';
                 if (cards.length) {
                     cards = cards.concat(Array.prototype.slice.call(qsa(selector)));
@@ -265,7 +268,7 @@ var bar_bottom_color = "#CC3333";  /* Edits made here will be lost during usersc
                     }
                     cards[i].setAttribute('seen', 'true');
                 }
-            } catch (e) {console.error('applyWatchedlist: '+ e)}
+            } catch (e) {console.error('applyWatchedlist: '+ e);}
         }
     }
 
@@ -276,7 +279,7 @@ var bar_bottom_color = "#CC3333";  /* Edits made here will be lost during usersc
                 setTimeout(function() { 
                     applySeenBars();
                     showMoreListen();
-            }, 2000)}, false);
+            }, 2000);}, false);
         }
     }
 
@@ -299,7 +302,7 @@ var bar_bottom_color = "#CC3333";  /* Edits made here will be lost during usersc
                 if (limit && BC.watched.length > limit) {
                     do {
                         BC.watched.shift();
-                    } while (BC.watched.length > limit)
+                    } while (BC.watched.length > limit);
                 }
             }
             GM.setValue('watched', JSON.stringify(BC.watched));
@@ -311,9 +314,9 @@ var bar_bottom_color = "#CC3333";  /* Edits made here will be lost during usersc
         return false;
     }
 
-    function qs(selector) { return document.querySelector(selector) }
+    function qs(selector) { return document.querySelector(selector); }
 
-    function qsa(selector) { return document.querySelectorAll(selector) }
+    function qsa(selector) { return document.querySelectorAll(selector); }
 
     function addListener(target, fn, config) {
         var cfg = {...{attributes:!1, childList:!1, characterData:!1, subtree:!1}, ...config};
