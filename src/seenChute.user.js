@@ -37,10 +37,10 @@
 
 
 /* Editable options */
-var limit_database_To = 2000;  /* 0 for unlimited. i.e. 5000 to save only the latest 5000 videos */
+var limit_database_To = 2000;      /* 0 for unlimited. i.e. 5000 to save only the latest 5000 videos */
 var bar_top_color = "#CC3333";     /* A hexadecimal color specified as: #RRGGBB, where the RR (red), GG (green) and BB (blue)*/
 var bar_middle_color = "#F05555";  /* Hex integers specify the components of the color. Values must be between 00 and FF. */
-var bar_bottom_color = "#CC3333";  /* Edits made here will be lost during userscript updates. Database data survives updates */
+var bar_bottom_color = "#000000";  /* Edits made here will be lost during userscript updates. Database data survives updates */
 /* End Editable options */
 
 
@@ -106,7 +106,7 @@ var bar_bottom_color = "#CC3333";  /* Edits made here will be lost during usersc
                 window.addEventListener('beforeunload', function(e){ watchedlistAdd(e); }, false);
                 unloader = true;
             }
-            applySeenBars();
+            applySeenBars(3000);
             window.setTimeout(function() { showMoreListen(); }, 5000);
         }
         else if (BC.profilepage || BC.hashtagpage || BC.playlistpage) {
@@ -140,13 +140,13 @@ var bar_bottom_color = "#CC3333";  /* Edits made here will be lost during usersc
 
             if (!listingTabs) {
                 qs("ul.nav-tabs-list li a[href='#listing-all']")
-                  .addEventListener('click', function(e){ applySeenBars(); }, false);
+                  .addEventListener('click', function(e){ applySeenBars() }, false);
                 qs("ul.nav-tabs-list li a[href='#listing-popular']")
-                  .addEventListener('click', function(e){ applySeenBars(); }, false);
+                  .addEventListener('click', function(e){ applySeenBars() }, false);
                 qs("ul.nav-tabs-list li a[href='#listing-subscribed']")
-                  .addEventListener('click', function(e){ applySeenBars(); }, false);
+                  .addEventListener('click', function(e){ applySeenBars() }, false);
                 qs("ul.nav-tabs-list li a[href='#listing-trending']")
-                  .addEventListener('click', function(e){ applySeenBars(); trendingTabs(); }, false);
+                  .addEventListener('click', function(e){ applySeenBars(); trendingTabs() }, false);
 
                 addListener(listingsAll, function(e) {
                     let newlistings = qs('#listing-all > div.row');
@@ -177,14 +177,15 @@ var bar_bottom_color = "#CC3333";  /* Edits made here will be lost during usersc
 
     function trendingTabs(e) {
         qs("ul.nav.nav-tabs li a[href='#trending-day']")
-          .addEventListener('click', function(e){ applySeenBars(); }, false);
+          .addEventListener('click', function(e){ applySeenBars() }, false);
         qs("ul.nav.nav-tabs li a[href='#trending-week']")
-          .addEventListener('click', function(e){ applySeenBars(); }, false);
+          .addEventListener('click', function(e){ applySeenBars() }, false);
         qs("ul.nav.nav-tabs li a[href='#trending-month']")
-          .addEventListener('click', function(e){ applySeenBars(); }, false);
+          .addEventListener('click', function(e){ applySeenBars() }, false);
     }
 
     function onPlayProgress(e) {
+        if (! BC.api) return;
         let active, liveBar, current, i;
         let duration = parseFloat(BC.api.duration);
         let valuenow = parseFloat(BC.api.currentTime);
@@ -218,8 +219,8 @@ var bar_bottom_color = "#CC3333";  /* Edits made here will be lost during usersc
         }
     }
 
-    function applySeenBars() {
-        window.setTimeout(_applySeenBars, 2000);
+    function applySeenBars(ms = 2000) {
+        window.setTimeout(_applySeenBars, ms);
     }
 
     function _applySeenBars(e) {
@@ -266,9 +267,9 @@ var bar_bottom_color = "#CC3333";  /* Edits made here will be lost during usersc
                             }
                         }
                     }
-                    cards[i].setAttribute('seen', 'true');
+                    cards[i].setAttribute('seen', 'true')
                 }
-            } catch (e) {console.error('applyWatchedlist: '+ e);}
+            } catch (e) {console.error('SeenChute: applyWatchedlist: '+ e);}
         }
     }
 
@@ -279,7 +280,7 @@ var bar_bottom_color = "#CC3333";  /* Edits made here will be lost during usersc
                 setTimeout(function() { 
                     applySeenBars();
                     showMoreListen();
-            }, 2000);}, false);
+            }, 2000)}, false)
         }
     }
 
@@ -290,7 +291,7 @@ var bar_bottom_color = "#CC3333";  /* Edits made here will be lost during usersc
             for (n = 0; n < BC.watched.length; n++) {
                 if (BC.watched[n][0] == videoId) {
                     if (BC.watched[n][1] < videoViewedMax) {
-                        BC.watched[n][1] = videoViewedMax;
+                        BC.watched[n][1] = videoViewedMax
                     }
                     update = true;
                     break;
@@ -301,11 +302,11 @@ var bar_bottom_color = "#CC3333";  /* Edits made here will be lost during usersc
                 let limit = limit_database_To ? parseInt(limit_database_To) : 0;
                 if (limit && BC.watched.length > limit) {
                     do {
-                        BC.watched.shift();
-                    } while (BC.watched.length > limit);
+                        BC.watched.shift()
+                    } while (BC.watched.length > limit)
                 }
             }
-            GM.setValue('watched', JSON.stringify(BC.watched));
+            GM.setValue('watched', JSON.stringify(BC.watched))
         }
         videoViewedMax = 0;
         videoId = '';
@@ -314,12 +315,14 @@ var bar_bottom_color = "#CC3333";  /* Edits made here will be lost during usersc
         return false;
     }
 
-    function qs(selector) { return document.querySelector(selector); }
+    function qs(selector) { return document.querySelector(selector) }
 
-    function qsa(selector) { return document.querySelectorAll(selector); }
+    function qsa(selector) { return document.querySelectorAll(selector) }
 
     function addListener(target, fn, config) {
+        // jshint ignore:start
         var cfg = {...{attributes:!1, childList:!1, characterData:!1, subtree:!1}, ...config};
+        // jshint ignore:end
         var observer = new MutationObserver(function(mutations) {
           mutations.forEach(function(mutation) { fn(mutation) })});
         observer.observe(target, cfg);
@@ -347,12 +350,12 @@ var bar_bottom_color = "#CC3333";  /* Edits made here will be lost during usersc
                 return false;
             }
         }).catch (error => {
-            console.error('S_marty: Error in promise loading watched list: '+ error)
-        });
-        window.setTimeout(iHaveSeen, 5000);
+            console.error('SeenChute: Error in promise loading watched list: '+ error)
+        })
+        window.setTimeout(iHaveSeen, 5000)
     }
 
       /* Not in Frames */
-    if (window.self == window.top) init();
+    if (window.self == window.top) init()
 
 }) ();
