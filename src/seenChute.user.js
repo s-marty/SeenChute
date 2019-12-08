@@ -1,13 +1,12 @@
 // ==UserScript==
 // @name            SeenChute
-// @version         19.11.11
+// @version         19.12.7
 // @description     BitChute.com. Adds a "watched" bar to top of video cards.
 // @license         MIT
 // @author          S-Marty
 // @compatible      firefox
 // @compatible      chrome
 // @compatible      opera
-// @compatible      vivaldi
 // @namespace       https://github.com/s-marty/SeenChute
 // @homepageURL     https://github.com/s-marty/SeenChute
 // @icon            https://raw.githubusercontent.com/s-marty/SeenChute/master/images/seenChute.png
@@ -20,6 +19,9 @@
 // @noframes
 // ==/UserScript==
 
+/* greasyfork.org jshint syntax checking hacks */
+/* jshint asi: true */
+/* jshint boss: true */
 /* jshint esversion: 6 */
 /* jshint multistr: true */
 
@@ -37,10 +39,10 @@
 
 
 /* Editable options */
-var limit_database_To = 2000;      /* 0 for unlimited. i.e. 5000 to save only the latest 5000 videos */
-var bar_top_color = "#CC3333";     /* A hexadecimal color specified as: #RRGGBB, where the RR (red), GG (green) and BB (blue)*/
-var bar_middle_color = "#F05555";  /* Hex integers specify the components of the color. Values must be between 00 and FF. */
-var bar_bottom_color = "#000000";  /* Edits made here will be lost during userscript updates. Database data survives updates */
+var limit_database_To = 2000;         /* 0 for unlimited. i.e. 5000 to save only the latest 5000 videos */
+var bar_top_color     = "#CC3333";    /* A hexadecimal color specified as: #RRGGBB, where the RR (red), GG (green) and BB (blue)*/
+var bar_middle_color  = "#F05555";    /* Hex integers specify the components of the color. Values must be between 00 and FF. */
+var bar_bottom_color  = "#000000";    /* Edits made here will be lost during userscript updates. Database data survives updates */
 /* End Editable options */
 
 
@@ -50,6 +52,7 @@ var bar_bottom_color = "#000000";  /* Edits made here will be lost during usersc
     var BC = {};
     var d = document;
     var videoId = '';
+    var updater = null;
     var unloader = null;
     var videoViewedMax = 0;
     var listingsAllHeight = 0;
@@ -98,9 +101,8 @@ var bar_bottom_color = "#000000";  /* Edits made here will be lost during usersc
             videoViewedMax = 0;
             videoId = BC.path.match( /video\/([a-z0-9_-]+)\//i )[1];
 
-            if (! BC.api) {
-                BC.api = qs('video#player');
-                BC.api.addEventListener('timeupdate', function(e){ onPlayProgress(e); }, false);
+            if (! BC.api || ! updater) {
+                apiUpdater()
             }
             if (! unloader) {
                 window.addEventListener('beforeunload', function(e){ watchedlistAdd(e); }, false);
@@ -184,6 +186,16 @@ var bar_bottom_color = "#000000";  /* Edits made here will be lost during usersc
           .addEventListener('click', function(e){ applySeenBars() }, false);
     }
 
+    function apiUpdater() {
+        if (BC.api = qs('video#player')) {
+            if (! updater) {
+                BC.api.addEventListener('timeupdate', function(e){ onPlayProgress(e); }, false);
+                updater = true;
+            }
+        }
+        else window.setTimeout(apiUpdater, 1000)
+    }
+
     function onPlayProgress(e) {
         if (! BC.api) return;
         let active, liveBar, current, i;
@@ -255,15 +267,13 @@ var bar_bottom_color = "#000000";  /* Edits made here will be lost during usersc
                         let href = link.getAttribute("href");
                         let video = href.match( /\/video\/([a-z0-9_-]+)\//i );
                         if (video) {
-                            for (n = 0; n < BC.watched.length; n++) {
-                                if (BC.watched[n][0] == video[1]) {
-                                    let bar = d.createElement("div");
-                                    bar.innerText = "&nbsp;";
-                                    bar.className = "video-seen";
-                                    bar.title = BC.watched[n][1] +'% Watched';
-                                    bar.style.width = BC.watched[n][1] +'%';
-                                    card.insertBefore(bar, card.firstChild);
-                                }
+                            if (BC.watched.has(video[1])) {
+                                let bar = d.createElement("div");
+                                bar.innerText = "&nbsp;";
+                                bar.className = "video-seen";
+                                bar.title = BC.watched.get(video[1]) +'% Watched';
+                                bar.style.width = BC.watched.get(video[1]) +'%';
+                                card.insertBefore(bar, card.firstChild);
                             }
                         }
                     }
@@ -276,8 +286,8 @@ var bar_bottom_color = "#000000";  /* Edits made here will be lost during usersc
     function showMoreListen() {
         let showMore = qs('.show-more');
         if (showMore) {
-            showMore.addEventListener('click', function(e){ 
-                setTimeout(function() { 
+            showMore.addEventListener('click', function(e) {
+                setTimeout(function() {
                     applySeenBars();
                     showMoreListen();
             }, 2000)}, false)
@@ -288,29 +298,28 @@ var bar_bottom_color = "#000000";  /* Edits made here will be lost during usersc
         if (BC.page != 'watchpage') return false;
         let n, update = false;
         if (videoId && videoViewedMax > 1) {
-            for (n = 0; n < BC.watched.length; n++) {
-                if (BC.watched[n][0] == videoId) {
-                    if (BC.watched[n][1] < videoViewedMax) {
-                        BC.watched[n][1] = videoViewedMax
-                    }
-                    update = true;
-                    break;
+            if (BC.watched.has(videoId)) {
+                if (BC.watched.get(videoId) < videoViewedMax) {
+                    BC.watched.set(videoId, videoViewedMax)
                 }
+                update = true;
             }
             if (! update) {
-                BC.watched.push([videoId, videoViewedMax]);
+                BC.watched.set(videoId, videoViewedMax);
                 let limit = limit_database_To ? parseInt(limit_database_To) : 0;
-                if (limit && BC.watched.length > limit) {
+                if (limit && BC.watched.size > limit) {
                     do {
-                        BC.watched.shift()
-                    } while (BC.watched.length > limit)
+                        BC.watched.delete(BC.watched.keys().next().value)
+                    } while (BC.watched.size > limit)
                 }
             }
-            GM.setValue('watched', JSON.stringify(BC.watched))
+            GM.setValue('watched', JSON.stringify(Array.from(BC.watched)))
         }
-        videoViewedMax = 0;
+
         videoId = '';
         BC.api = null;
+        updater = null;
+        videoViewedMax = 0;
 
         return false;
     }
@@ -341,13 +350,12 @@ var bar_bottom_color = "#000000";  /* Edits made here will be lost during usersc
             BC.loader = null;
 
             if (value && value != '[]') {
-                BC.watched = JSON.parse(value);
+                BC.watched = new Map(JSON.parse(value));
             }
             else {
                     /* Install Database */
                 GM.setValue('watched', '[ ]');
                 window.location.replace(window.location.href);
-                return false;
             }
         }).catch (error => {
             console.error('SeenChute: Error in promise loading watched list: '+ error)
